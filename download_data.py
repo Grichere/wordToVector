@@ -1,9 +1,6 @@
 import urllib.request, bz2, re, os
 import html
-
-URL = "https://dumps.wikimedia.org/simplewiki/latest/simplewiki-latest-pages-articles.xml.bz2"
-RAW_PATH = "data/raw/wiki_simple.txt"
-TOPIC_KEYWORDS = ["animal", "species", "mammal", "biology", "bird", "fish"]
+from config import URL,RAW_PATH,TOPIC_KEYWORDS
 
 
 def to_sentences(text: str):
