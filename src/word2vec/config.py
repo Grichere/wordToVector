@@ -16,6 +16,7 @@ VOCAB_PATH = "data/model/vocab.pkl"
 #Data download specifications
 URL = "https://dumps.wikimedia.org/simplewiki/latest/simplewiki-latest-pages-articles.xml.bz2"
 TOPIC_KEYWORDS = ["animal", "species", "mammal", "biology", "bird", "fish"]
+MAX_ARTICLES = 500
 
 #training params
 LOG_EVERY = 10_000

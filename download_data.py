@@ -1,6 +1,6 @@
 import urllib.request, bz2, re, os
 import html
-from config import URL,RAW_PATH,TOPIC_KEYWORDS
+from src.word2vec.config import URL,RAW_PATH,TOPIC_KEYWORDS, MAX_ARTICLES
 
 
 def to_sentences(text: str):
@@ -15,20 +15,33 @@ def to_sentences(text: str):
         if len(s.split()) >= 3:
             yield s
 
+def remove_nested_braces(text: str) -> str:
+    while '{{' in text:
+        # find innermost {{ }} first (no {{ inside)
+        text = re.sub(r'\{\{[^{}]*\}\}', ' ', text)
+    return text
+
 def strip_wiki_markup(text: str) -> str:
     text = html.unescape(text)
     text = html.unescape(text)
     text = re.sub(r'<gallery.*?>.*?</gallery>', ' ', text, flags=re.IGNORECASE | re.DOTALL)
+    text = re.sub(r'<imagemap.*?>.*?</imagemap>', ' ', text, flags=re.IGNORECASE | re.DOTALL)
+    text = re.sub(r'<ref[^>]*>.*?</ref>', ' ', text, flags=re.IGNORECASE | re.DOTALL)
+    text = re.sub(r'<ref[^>]*/>', ' ', text, flags=re.IGNORECASE)
+    text = re.sub(r'\{\|.*?\|\}', ' ', text, flags=re.DOTALL)
     text = re.sub(r'\[\[(File|Image):.*?\]\]', ' ', text, flags=re.IGNORECASE | re.DOTALL)
     text = re.sub(r'\[\[(?:[^|\]]*\|)?([^\]]*)\]\]', r'\1', text)
-    text = re.sub(r'\{\{.*?\}\}', ' ', text, flags=re.DOTALL)
+    text = remove_nested_braces(text)
+    text = re.sub(r'={2,}[^=]+={2,}', ' ', text)
+    text = re.sub(r'__[A-Z]+__', ' ', text)
     text = re.sub(r'https?://\S+', ' ', text)
     text = re.sub(r'www\.\S+', ' ', text)
     text = re.sub(r'<.*?>', ' ', text, flags=re.DOTALL)
     text = re.sub(r'\b(file|image)\s*:\s*\S+', ' ', text, flags=re.IGNORECASE)
-    text = re.sub(r'\b(thumb|px|right|left|center|upright|frame|wikitext)\b', ' ', text)
+    text = re.sub(r'\b(thumb|px|right|left|center|upright|frame|wikitext|rect)\b', ' ', text)
     text = re.sub(r'\btext\s+x\s+wiki\b', ' ', text, flags=re.IGNORECASE)
     return text
+
 
 
 def matches_topic(title: str, keywords: list) -> bool:
@@ -37,36 +50,35 @@ def matches_topic(title: str, keywords: list) -> bool:
 
 
 def stream_articles(path):
-    """Yields (title, text) tuples."""
     buf = ""
     in_text = False
     current_title = ""
     with bz2.open(path, "rt", encoding="utf-8", errors="ignore") as f:
         for line in f:
             buf += line
-            # Extract title
+
             title_match = re.search(r"<title>(.*?)</title>", buf)
             if title_match:
                 current_title = title_match.group(1).strip()
                 buf = buf[title_match.end():]
 
-            while "<text" in buf:
+            if not in_text:
                 start = buf.find("<text")
-                if not in_text:
+                if start != -1:
                     tag_end = buf.find(">", start)
                     if tag_end != -1:
                         in_text = True
-                        buf = buf[tag_end+1:]
-                    break
+                        buf = buf[tag_end + 1:]
+
+            if in_text:
                 end = buf.find("</text>")
                 if end != -1:
                     content = buf[:end].strip()
-                    buf = buf[end+7:]
+                    buf = buf[end + 7:]
                     in_text = False
                     if content:
                         yield current_title, content
-                else:
-                    break
+
             if len(buf) > 1_000_000:
                 buf = ""
 
@@ -86,7 +98,8 @@ with open(RAW_PATH, "w", encoding="utf-8") as out:
         for sent in to_sentences(text):
             out.write(sent + "\n")
         count += 1
-        if count >= 500:
+        print(f"wrote acticle {count}")
+        if count >= MAX_ARTICLES:
             break
 
 print(f"Done. Wrote {count} articles to {RAW_PATH}")
