@@ -16,9 +16,15 @@ def to_sentences(text: str):
             yield s
 
 def remove_nested_braces(text: str) -> str:
-    while '{{' in text:
-        # find innermost {{ }} first (no {{ inside)
-        text = re.sub(r'\{\{[^{}]*\}\}', ' ', text)
+    max_iters = 20
+    for _ in range(max_iters):
+        if '{{' not in text:
+            break
+        new_text = re.sub(r'\{\{[^{}]*\}\}', ' ', text)
+        if new_text == text:
+            break
+        text = new_text
+    text = re.sub(r'\{.*?\}', ' ', text, flags=re.DOTALL)
     return text
 
 def strip_wiki_markup(text: str) -> str:
@@ -26,6 +32,7 @@ def strip_wiki_markup(text: str) -> str:
     text = html.unescape(text)
     text = re.sub(r'<gallery.*?>.*?</gallery>', ' ', text, flags=re.IGNORECASE | re.DOTALL)
     text = re.sub(r'<imagemap.*?>.*?</imagemap>', ' ', text, flags=re.IGNORECASE | re.DOTALL)
+    text = re.sub(r'\[\[category:.*?\]\]', ' ', text, flags=re.IGNORECASE)
     text = re.sub(r'<ref[^>]*>.*?</ref>', ' ', text, flags=re.IGNORECASE | re.DOTALL)
     text = re.sub(r'<ref[^>]*/>', ' ', text, flags=re.IGNORECASE)
     text = re.sub(r'\{\|.*?\|\}', ' ', text, flags=re.DOTALL)
@@ -92,8 +99,8 @@ with open(RAW_PATH, "w", encoding="utf-8") as out:
     for title, text in stream_articles("/tmp/simplewiki.xml.bz2"):
         if text.strip().lower().startswith("#redirect"):   # skip redirect pages
             continue
-        if not matches_topic(title, TOPIC_KEYWORDS):
-            continue                          # skip off-topic articles
+        # if not matches_topic(title, TOPIC_KEYWORDS):
+        #     continue                          # skip off-topic articles
         text = strip_wiki_markup(text)
         for sent in to_sentences(text):
             out.write(sent + "\n")

@@ -1,5 +1,5 @@
 import pickle, os
-import config
+from word2vec import config
 
 def load_corpus(path: str = config.RAW_PATH) -> list[list[str]]:
     """Reads cleaned text file, returns list of tokenised sentences."""
