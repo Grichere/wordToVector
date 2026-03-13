@@ -7,9 +7,8 @@ class SkipGramModel:
         self.V = vocab_size
         self.d = config.EMBEDDING_DIM
 
-        # Initialise small random weights — standard practice
-        # W_in:  each row is the input  vector for a word (what it looks like as centre)
-        # W_out: each row is the output vector for a word (what it looks like as context)
+        # W_in:  each row is the input vector for a word
+        # W_out: each row is the output vector for a word
         self.W_in  = np.random.uniform(-0.5 / self.d, 0.5 / self.d, (self.V, self.d)).astype(np.float32)
         self.W_out = np.zeros((self.V, self.d), dtype=np.float32)
 
@@ -85,7 +84,7 @@ class SkipGramModel:
         print(f"Embeddings saved to {path}")
 
     # ------------------------------------------------------------------
-    # Gradient check (finite differences) — run this before full training
+    # Gradient check (finite differences) 
     # ------------------------------------------------------------------
 
     def gradient_check(self, centre_idx: int, context_idx: int, neg_indices: np.ndarray):

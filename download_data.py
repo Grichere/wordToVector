@@ -1,6 +1,6 @@
 import urllib.request, bz2, re, os
 import html
-from src.word2vec.config import URL,RAW_PATH,TOPIC_KEYWORDS, MAX_ARTICLES
+from src.word2vec.config import URL,RAW_PATH,TOPIC_KEYWORDS, MAX_ARTICLES, USE_TOPIC_KEYWORDS
 
 
 def to_sentences(text: str):
@@ -99,8 +99,8 @@ with open(RAW_PATH, "w", encoding="utf-8") as out:
     for title, text in stream_articles("/tmp/simplewiki.xml.bz2"):
         if text.strip().lower().startswith("#redirect"):   # skip redirect pages
             continue
-        # if not matches_topic(title, TOPIC_KEYWORDS):
-        #     continue                          # skip off-topic articles
+        if USE_TOPIC_KEYWORDS and not matches_topic(title, TOPIC_KEYWORDS):
+            continue                          # skip off-topic articles
         text = strip_wiki_markup(text)
         for sent in to_sentences(text):
             out.write(sent + "\n")
