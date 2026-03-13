@@ -2,7 +2,12 @@
 # Edit at https://www.toptal.com/developers/gitignore?templates=venv,visualstudiocode
 
 # downloaded data + processed 
-data/
+data/processed/*
+data/raw/*
+data/model/*
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+!data/model/.gitkeep
 
 # pycache
 __pycache__/
